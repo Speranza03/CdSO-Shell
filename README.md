@@ -1,8 +1,9 @@
 # CdSO-Shell
 progetto scelto:
-  shell (con FS)
-   File mmappato E persistente
-   Comandi usuali di shell (e di "libreria)
+
+  - shell (con FS)
+   - File mmappato E persistente
+   - Comandi usuali di shell (e di "libreria)
    - format <fs_filename> <size>
    - mkdir
    - cd
