@@ -13,3 +13,6 @@ progetto scelto:
    - append <file> <testo>
    - rm <dir/file>
    - close
+
+
+sto utilizzando WSL2 ubuntu su una macchina con windows 11, se causa problemi passo ad usare la VM dell'università
