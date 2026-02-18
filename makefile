@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g 
-OBJ = main.o fs_utils.o 
+OBJ = main.o fs_utils.o fs_core.o
 EXEC = shell_fs
 
 all: $(EXEC)
