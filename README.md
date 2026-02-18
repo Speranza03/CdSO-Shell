@@ -16,3 +16,5 @@ progetto scelto:
 
 
 sto utilizzando WSL2 ubuntu su una macchina con windows 11, se causa problemi passo ad usare la VM dell'università
+
+faccio questo commit solo per spiegare il gap che ci potrebbe essere tra oggi e quando riprendo a lavorarci sopra
