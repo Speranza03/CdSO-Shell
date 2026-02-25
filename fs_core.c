@@ -165,3 +165,80 @@ void fs_ls (char* memory_ptr, int dir_inode_index){
         }
     }
 }
+
+int get_inode_in_dir(char* memory_ptr, int parent_inode_index, char*name) {
+    Superblock* sb = (Superblock*) memory_ptr;
+    Inode* inode_table = (Inode*) (memory_ptr + sb->inode_table_offset);
+    Inode* parent_inode = &inode_table[parent_inode_index];
+
+    if(parent_inode->blocks[0] == -1) return -1;
+
+    int block_idx = parent_inode->blocks[0];
+    char*block_ptr = memory_ptr + sb->data_blocks_offset + (block_idx * BLOCK_SIZE);
+    DirectoryEntry* entries = (DirectoryEntry*) block_ptr;
+
+    int max_entries = BLOCK_SIZE / sizeof(DirectoryEntry);
+
+    for (int i = 0; i< max_entries; i++){
+        if( entries[i].inode_index != -1){
+            if(strcmp(entries[i].name, name) == 0){
+                return entries[i].inode_index;
+            }
+        }
+    }
+    return -1;
+
+}
+
+void fs_touch(char* memory_ptr, int parent_inode_index, char* name){
+    if(get_inode_in_dir(memory_ptr, parent_inode_index, name) != -1){
+        printf("Errore: il file '%s' esiste già.\n", name);
+        return;
+    }
+
+    int new_inode_idx = get_free_inode(memory_ptr);
+    if (new_inode_idx == -1) {
+        printf("Errore: Nessun Inode libero.\n");
+        return;
+    }
+
+    Superblock* sb= (Superblock*) memory_ptr;
+    Inode* inode_table = (Inode*) (memory_ptr + sb->inode_table_offset);
+    Inode* new_inode = &inode_table[new_inode_idx];
+
+    new_inode->is_used = 1;
+    new_inode->type = FILE_TYPE;
+    strncpy(new_inode->name, name, MAX_FILENAME);
+    new_inode->size = 0;
+    for(int i = 0; i<10; i++){
+        new_inode->blocks[i] = -1;
+    }
+
+    Inode* parent_inode = &inode_table[parent_inode_index];
+    int parent_block_idx = parent_inode->blocks[0];
+
+    if(parent_block_idx== -1){
+        parent_block_idx = get_free_block(memory_ptr);
+        parent_inode->blocks[0] = parent_block_idx;
+        char* ptr = memory_ptr + sb->data_blocks_offset + (parent_block_idx * BLOCK_SIZE);
+        memset(ptr, 0, BLOCK_SIZE);
+        DirectoryEntry* e = (DirectoryEntry*) ptr;
+        int max_entries = BLOCK_SIZE / sizeof(DirectoryEntry);
+        for(int i = 0; i < max_entries; i++){
+            e[i].inode_index = -1;
+        }
+    }
+
+    char*block_ptr = memory_ptr +sb->data_blocks_offset + (parent_block_idx * BLOCK_SIZE);
+    DirectoryEntry* entries = (DirectoryEntry*) block_ptr;
+
+    int max_entries = BLOCK_SIZE / sizeof(DirectoryEntry);
+    for (int i = 0; i < max_entries; i++){
+        if(entries[i].inode_index == -1){
+            entries[i].inode_index = new_inode_idx;
+            strncpy(entries[i].name, name, MAX_FILENAME);
+            printf("Creato file '%s' (Inode%d)\n", name, new_inode_idx);
+            return;
+        }
+    }
+}

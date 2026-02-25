@@ -34,6 +34,10 @@ int main(int argc, char** argv) {
     else if (strcmp(cmd, "ls") == 0) {
         fs_ls(fs_memory, 0);
     }
+    else if (strcmp(cmd, "touch") == 0) {
+        if (argc < 4) printf("Uso: touch <nome>\n");
+        else fs_touch(fs_memory, 0, argv[3]);
+    }
     else {
         printf("Comando sconosciuto: %s\n", cmd);
     }
