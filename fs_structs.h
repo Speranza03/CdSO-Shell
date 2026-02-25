@@ -33,4 +33,9 @@ typedef struct {
     uint64_t data_blocks_offset;
 } Superblock; //sta all'inizio del file e descrive tutto
 
+typedef struct {
+    char name[MAX_FILENAME];
+    int inode_index; // -1 = slot vuoto
+} DirectoryEntry; //rappresenta una voce dentro una cartella
+
 #endif

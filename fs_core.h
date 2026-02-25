@@ -5,12 +5,17 @@
 
 //fnunzione format
 void fs_format(char* memory_ptr, size_t size);
-
+//funzione per cercare Inode libero
+int get_free_inode(char* memory_ptr);
+//funzione per cercare Blocco libero
+int get_free_block(char* memory_ptr);
+//funzione ls
+void fs_ls(char* memory_ptr, int dir_inode_index);
+//funziojne mkdir
+void fs_mkdir(char* memory_ptr, int parent_inode_index, char* name);
 /*
 mancano:
-    mkdir
     cd
-    ls
     touch
     cat
     append
