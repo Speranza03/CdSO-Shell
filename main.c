@@ -38,6 +38,14 @@ int main(int argc, char** argv) {
         if (argc < 4) printf("Uso: touch <nome>\n");
         else fs_touch(fs_memory, 0, argv[3]);
     }
+    else if (strcmp(cmd, "append") == 0) {
+        if (argc < 5) printf("Uso: append <nome> <testo>\n");
+        else fs_append(fs_memory, 0, argv[3], argv[4]);
+    }
+    else if (strcmp(cmd, "cat") == 0) {
+        if (argc < 4) printf("Uso: cat <nome>\n");
+        else fs_cat(fs_memory, 0, argv[3]);
+    }
     else {
         printf("Comando sconosciuto: %s\n", cmd);
     }

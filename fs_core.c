@@ -242,3 +242,85 @@ void fs_touch(char* memory_ptr, int parent_inode_index, char* name){
         }
     }
 }
+
+void fs_append(char* memory_ptr, int parent_inode_index, char* filename, char* text){
+    Superblock* sb = (Superblock*) memory_ptr;
+    Inode* inode_table = (Inode*) (memory_ptr + sb->inode_table_offset);
+
+    int file_inode_idx = get_inode_in_dir(memory_ptr, parent_inode_index, filename);
+    if(file_inode_idx == -1){
+        printf("Errore: File '%s' non trovato.\n", filename);
+        return;
+    }
+
+    Inode* file_inode = &inode_table[file_inode_idx];
+    if(file_inode->type != FILE_TYPE){
+        printf("Errore: '%s' è una directory, non è un file.", filename);
+        return;
+    }
+
+    int text_len = strlen(text);
+    int current_size = file_inode->size;
+    int block_index = current_size / BLOCK_SIZE;
+    int offset_in_block = current_size % BLOCK_SIZE;
+
+    if(file_inode->blocks[block_index] == -1){
+        int new_block = get_free_block(memory_ptr);
+        if(new_block == -1){
+            printf("Errore: spazio su disco esaurito.\n");
+            return;
+        }
+        file_inode->blocks[block_index] = new_block;
+        memset(memory_ptr + sb->data_blocks_offset + (new_block * BLOCK_SIZE), 0, BLOCK_SIZE);
+    }
+
+    int physical_block_id = file_inode->blocks[block_index];
+    char* dest_ptr = memory_ptr + sb->data_blocks_offset + (physical_block_id * BLOCK_SIZE) + offset_in_block;
+
+    if(offset_in_block + text_len > BLOCK_SIZE){
+        printf("Attenzione: il testo eccede il blocco, tronco la scrittura\n");
+        text_len = BLOCK_SIZE - offset_in_block;
+    }
+    
+    memcpy(dest_ptr, text, text_len);
+    file_inode->size += text_len;
+    printf("Aggiunti %d bytes a '%s', nuova size %d\n", text_len, filename, file_inode->size);
+}
+
+void fs_cat(char* memory_ptr, int parent_inode_index, char* filename){
+    Superblock* sb = (Superblock*) memory_ptr;
+    Inode* inode_table = (Inode*) (memory_ptr + sb->inode_table_offset);
+
+    int file_inode_idx = get_inode_in_dir(memory_ptr, parent_inode_index, filename);
+    if(file_inode_idx == -1){
+        printf("Errore: File non trovato\n");
+        return;
+    }
+
+    Inode* file_inode = &inode_table[file_inode_idx];
+    if(file_inode->type != FILE_TYPE){
+        printf("Errore: Non è un file\n");
+        return;
+    }
+
+    printf("--- Contenuto di %s --- \n", filename);
+
+    uint32_t bytes_printed = 0;
+    for (int i = 0; i<10; i++){
+        if(file_inode->blocks[i] == -1) break;
+
+        char* block_ptr = memory_ptr + sb->data_blocks_offset + (file_inode->blocks[i] * BLOCK_SIZE);
+
+        uint32_t bytes_to_print = BLOCK_SIZE;
+        if(bytes_printed + bytes_to_print > file_inode->size){
+            bytes_to_print = file_inode->size - bytes_printed;
+        }
+
+        for(uint32_t i = 0; i < bytes_to_print; i++){
+            putchar(block_ptr[i]);
+        }
+        bytes_printed+=bytes_to_print;
+        if(bytes_printed >= file_inode->size) break;
+    }
+    printf("\n------------------------\n");
+}
