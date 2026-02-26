@@ -21,11 +21,12 @@ void fs_touch(char* memory_ptr, int parent_inode_index, char* name);
 void fs_append(char* memory_ptr, int parent_inode_index, char* filename, char* text);
 //funzione cat
 void fs_cat(char* memory_ptr, int parent_inode_index, char* filename);
+//funzione rm
+void fs_rm(char* memory_ptr, int parent_inode_index, char* name);
 
 /*
 mancano:
     cd
-    rm
     close
     */
 #endif

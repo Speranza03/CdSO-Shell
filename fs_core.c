@@ -56,7 +56,7 @@ int get_free_inode(char* memory_ptr){ //cerca un bit a 0 nelal Inode Map
     Superblock* sb = (Superblock*) memory_ptr;
     uint8_t* inode_map = (uint8_t*) (memory_ptr + sb->inode_map_offset);
 
-    for (int i = 0; i < sb->num_inodes; i++){
+    for (uint32_t i = 0; i < sb->num_inodes; i++){
         if (inode_map[i] == 0){
             inode_map[i] = 1;
             return i;
@@ -70,7 +70,7 @@ int get_free_block(char* memory_ptr){//cerca un bit a 0 nella Block Map
     Superblock* sb = (Superblock*) memory_ptr;
     uint8_t* block_map = (uint8_t*) (memory_ptr + sb->block_map_offset);
 
-    for (int i = 0; i< sb->num_blocks; i++){
+    for (uint32_t i = 0; i< sb->num_blocks; i++){
         if(block_map[i] == 0){
             block_map[i] = 1;
             sb->free_blocks--;
@@ -323,4 +323,57 @@ void fs_cat(char* memory_ptr, int parent_inode_index, char* filename){
         if(bytes_printed >= file_inode->size) break;
     }
     printf("\n------------------------\n");
+}
+
+void fs_rm(char* memory_ptr, int parent_inode_index, char* name) {
+    Superblock* sb = (Superblock*) memory_ptr;
+    Inode* inode_table = (Inode*) (memory_ptr + sb->inode_table_offset);
+    uint8_t* inode_map = (uint8_t*) (memory_ptr + sb->inode_map_offset);
+    uint8_t* block_map = (uint8_t*) (memory_ptr + sb->block_map_offset);
+
+    Inode* parent_inode = &inode_table[parent_inode_index];
+    if (parent_inode->blocks[0] == -1) return;
+
+    char* parent_block_ptr = memory_ptr + sb->data_blocks_offset + (parent_inode->blocks[0] * BLOCK_SIZE);
+    DirectoryEntry* entries = (DirectoryEntry*) parent_block_ptr;
+    
+    int target_inode_idx = -1;
+    int entry_idx = -1;
+
+    int max_entries = BLOCK_SIZE / sizeof(DirectoryEntry);
+    for(int i=0; i<max_entries; i++) {
+        if (entries[i].inode_index != -1 && strcmp(entries[i].name, name) == 0) {
+            target_inode_idx = entries[i].inode_index;
+            entry_idx = i;
+            break;
+        }
+    }
+
+    if (target_inode_idx == -1) {
+        printf("Errore: '%s' non trovato.\n", name);
+        return;
+    }
+
+    Inode* target_inode = &inode_table[target_inode_idx];
+
+    if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+        printf("Errore: impossibile cancellare . o ..\n");
+        return;
+    }
+
+    for(int i=0; i<10; i++) {
+        if (target_inode->blocks[i] != -1) {
+            int blk_idx = target_inode->blocks[i];
+            block_map[blk_idx] = 0; // Libera bit
+            sb->free_blocks++;
+        }
+    }
+
+    target_inode->is_used = 0;
+    inode_map[target_inode_idx] = 0;
+
+    // 4. Rimuovi l'entry dalla directory
+    entries[entry_idx].inode_index = -1;
+    
+    printf("Rimosso '%s'\n", name);
 }
